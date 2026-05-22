@@ -277,6 +277,7 @@ class ProblemPreviewView implements Disposable {
                 };
             </script>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js?config=TeX-AMS-MML_SVG"></script>
+            <button id="solve">Code Now</button>
             <script>
                 const vscode = acquireVsCodeApi();
                 const button = document.getElementById('solve');
