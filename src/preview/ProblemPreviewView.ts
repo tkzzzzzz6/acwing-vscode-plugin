@@ -160,13 +160,22 @@ class ProblemPreviewView implements Disposable {
     private getHtmlHead() {
         let html = `
             <meta http-equiv="Content-Security-Policy"
-                content = "default-src https://cdn.acwing.com 'unsafe-inline' 'none' ; 
-                img-src ${ this.panel?.webview.cspSource } https://cdn.acwing.com  https:; 
-                script-src ${ this.panel?.webview.cspSource } https://cdn.acwing.com 'unsafe-inline';
+                content = "default-src 'none';
+                img-src ${ this.panel?.webview.cspSource } https://cdn.acwing.com https:;
+                script-src ${ this.panel?.webview.cspSource } https://cdn.acwing.com https://cdnjs.cloudflare.com 'unsafe-inline' 'unsafe-eval';
                 style-src ${ this.panel?.webview.cspSource } https://cdn.acwing.com 'unsafe-inline';"
             />
             <link rel="stylesheet" href="${this.getResWebUri('acwing.css')}">
             <link rel="stylesheet" href="${this.getResWebUri('primer.css')}">
+            <style>
+                /* MathJax SVG 输出:文字颜色跟随主题 */
+                .MathJax_SVG svg text,
+                svg.MathJax_SVG text {
+                    fill: currentColor !important;
+                }
+                /* 隐藏的 MathJax 元素 */
+                #MathJax_SVG_Hidden { display: none !important; }
+            </style>
         `
         return html;
     }
@@ -248,22 +257,26 @@ class ProblemPreviewView implements Disposable {
 
     private getHtmlScript() {
         let html = `
-            <button id="solve">Code Now</button>                
-            <script type="text/javascript" src="https://cdn.acwing.com/static/MathJax-2.6-latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-            <script type="text/x-mathjax-config;executed=true">
-                MathJax.Hub.Config({
-                    tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
-                    showMathMenu: false,
-                });
-            </script>
             <script>
-                console.log("MathJax.Hub.Config");
-                MathJax.Hub.Config({
-                    tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
+                window.MathJax = {
+                    tex2jax: {
+                        inlineMath: [['$','$'], ['\\(','\\)']],
+                        processEscapes: true
+                    },
                     showMathMenu: false,
-                });
-                //MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+                    TeX: {
+                        extensions: ["AMSmath.js","AMSsymbols.js","noErrors.js","noUndefined.js"]
+                    },
+                    // SVG 输出模式:公式颜色天然继承 CSS,不会出现白→黑闪烁
+                    "HTML-CSS": { preferredFont: "TeX" },
+                    SVG: { font: "TeX" },
+                    // onLoad: MathJax 完全加载后触发
+                    onLoad: function() {
+                        MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+                    }
+                };
             </script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js?config=TeX-AMS-MML_SVG"></script>
             <script>
                 const vscode = acquireVsCodeApi();
                 const button = document.getElementById('solve');
@@ -313,6 +326,10 @@ class ProblemPreviewView implements Disposable {
             case "reloadProblem": {
                 console.log('reloadProblem()');
                 await this.showWebviewInternal();
+                break;
+            }
+            case "debug": {
+                console.log((message as any).text || JSON.stringify(message));
                 break;
             }
         }
